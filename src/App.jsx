@@ -26,6 +26,8 @@ const parseCSV = (str) => {
 };
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRjCZcU_iLdK8uBuDHGbLdy294Z77-iH83DBvgMdm9Lmhzi1ixgBY7TKLd-FCXl7vzeqBQ3MfPO_wm1/pub?output=csv";
+// Added your Google Apps Script Web App URL here for score submission
+const SUBMIT_SCORE_URL = "https://script.google.com/macros/s/AKfycbxL69d56jy02NsGTZgu1DEIPDjSy17UZhfnsn7qhVbO-y9qOedCQY8tljzm_8sy6OxJ/exec";
 
 const translations = {
   en: {
@@ -167,6 +169,10 @@ export default function App() {
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+
+  // NEW STATES FOR SCORE SUBMISSION:
+  const [isSubmittingScore, setIsSubmittingScore] = useState(false);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -312,6 +318,7 @@ export default function App() {
     setAnswers({});
     setCurrentQIndex(0);
     setTimeLeft(filtered.length * 30);
+    setScoreSubmitted(false); // Reset score submission state for a new exam
     setAppState('exam');
   };
 
@@ -336,7 +343,7 @@ export default function App() {
       window.addEventListener('popstate', handlePopState);
       return () => window.removeEventListener('popstate', handlePopState);
     }
-  }, [appState, lang]); // added lang dependency to ensure translation is fresh
+  }, [appState, lang]); 
 
   useEffect(() => {
     let timer;
@@ -347,10 +354,60 @@ export default function App() {
     } else if (appState === 'exam' && timeLeft === 0) {
       // Auto-submit silently when time is up
       setAppState('result');
-      setModalConfig(null); // Clear any pending modals
+      setModalConfig(null); 
     }
     return () => clearInterval(timer);
   }, [appState, timeLeft]);
+
+  // Auto-submit score to Google Sheets when app enters 'result' state
+  useEffect(() => {
+    if (appState === 'result' && !scoreSubmitted && !isSubmittingScore) {
+      
+      // Calculate score
+      let correctCount = 0;
+      let wrongCount = 0;
+      activeQuestions.forEach((q, idx) => {
+        const selectedIdx = answers[idx];
+        if (selectedIdx !== undefined) {
+          const selectedText = q.options[selectedIdx];
+          if (selectedText && q.correctAnswer && selectedText.toString().trim() === q.correctAnswer.toString().trim()) {
+            correctCount++;
+          } else {
+            wrongCount++;
+          }
+        }
+      });
+      
+      const rawScore = correctCount - (wrongCount * 0.25);
+      const total = activeQuestions.length;
+
+      const submitData = async () => {
+        setIsSubmittingScore(true);
+        try {
+          const formData = new FormData();
+          formData.append('name', userName);
+          formData.append('subject', selectedSubject);
+          formData.append('chapter', selectedChapter);
+          formData.append('score', rawScore);
+          formData.append('total', total);
+
+          await fetch(SUBMIT_SCORE_URL, {
+            method: 'POST',
+            body: formData,
+            mode: 'no-cors' // Important to bypass CORS blocks with Google Web Apps
+          });
+          
+          setScoreSubmitted(true);
+        } catch (error) {
+          console.error("Failed to submit score:", error);
+        } finally {
+          setIsSubmittingScore(false);
+        }
+      };
+      
+      submitData();
+    }
+  }, [appState, activeQuestions, answers, userName, selectedSubject, selectedChapter, scoreSubmitted, isSubmittingScore]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -797,6 +854,19 @@ export default function App() {
               <div className="w-48 h-48 rounded-full border-[12px] border-slate-50 flex flex-col items-center justify-center shadow-2xl bg-white animate-in zoom-in duration-700 delay-200 fill-mode-both hover:scale-105 transition-transform duration-500">
                 <span className="text-6xl font-black bg-clip-text text-transparent bg-gradient-to-br from-blue-600 to-indigo-600 tracking-tighter drop-shadow-sm">{formatNum(rawScore)}</span>
                 <span className="text-slate-400 font-extrabold uppercase text-xs tracking-[0.2em] mt-2 border-t-2 border-slate-100 pt-2 w-1/2 text-center">{t.outOf} {formatNum(total)}</span>
+              </div>
+              
+              {/* NEW SUBMISSION INDICATOR */}
+              <div className="mt-6 h-6">
+                {isSubmittingScore ? (
+                  <span className="text-sm font-semibold text-slate-500 flex items-center gap-2 animate-pulse">
+                    <RefreshCw size={16} className="animate-spin" /> Saving score to database...
+                  </span>
+                ) : scoreSubmitted ? (
+                  <span className="text-sm font-bold text-emerald-600 flex items-center gap-2 animate-in fade-in zoom-in">
+                    <CheckCircle size={16} /> Score saved successfully!
+                  </span>
+                ) : null}
               </div>
             </div>
 
