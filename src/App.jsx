@@ -384,24 +384,28 @@ export default function App() {
       const submitData = async () => {
         setIsSubmittingScore(true);
         try {
-          // Package the data as URL query parameters
           const queryParams = new URLSearchParams({
             name: userName,
             subject: selectedSubject,
             chapter: selectedChapter,
             score: rawScore,
-            total: total
+            total: total,
+            // Cache Buster: Ensures the browser NEVER caches this request
+            timestamp: new Date().getTime() 
           }).toString();
 
-          // Append query parameters to your Web App URL and send a GET request
-          await fetch(`${SUBMIT_SCORE_URL}?${queryParams}`, {
+          const finalUrl = `${SUBMIT_SCORE_URL}?${queryParams}`;
+          console.log("Attempting to send score to Google:", finalUrl);
+
+          await fetch(finalUrl, {
             method: 'GET',
             mode: 'no-cors'
           });
           
+          console.log("Successfully fired request to Google Apps Script.");
           setScoreSubmitted(true);
         } catch (error) {
-          console.error("Failed to submit score:", error);
+          console.error("Fetch request failed:", error);
         } finally {
           setIsSubmittingScore(false);
         }
