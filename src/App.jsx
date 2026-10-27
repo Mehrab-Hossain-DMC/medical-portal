@@ -27,7 +27,7 @@ const parseCSV = (str) => {
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRjCZcU_iLdK8uBuDHGbLdy294Z77-iH83DBvgMdm9Lmhzi1ixgBY7TKLd-FCXl7vzeqBQ3MfPO_wm1/pub?output=csv";
 // Added your Google Apps Script Web App URL here for score submission
-const SUBMIT_SCORE_URL = "https://script.google.com/macros/s/AKfycbxL69d56jy02NsGTZgu1DEIPDjSy17UZhfnsn7qhVbO-y9qOedCQY8tljzm_8sy6OxJ/exec";
+const SUBMIT_SCORE_URL = "https://script.google.com/macros/s/AKfycbyUsdAr4wI6hdn9MIHo_VlkpQmApv6r-3D8aH0rbqK-_9U46TuO9LMK1MsiHWIhx2pe/exec";
 
 const translations = {
   en: {
