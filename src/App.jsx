@@ -384,21 +384,19 @@ export default function App() {
       const submitData = async () => {
         setIsSubmittingScore(true);
         try {
-          // Changed from FormData to URLSearchParams
-          const urlParams = new URLSearchParams();
-          urlParams.append('name', userName);
-          urlParams.append('subject', selectedSubject);
-          urlParams.append('chapter', selectedChapter);
-          urlParams.append('score', rawScore);
-          urlParams.append('total', total);
+          // Package the data as URL query parameters
+          const queryParams = new URLSearchParams({
+            name: userName,
+            subject: selectedSubject,
+            chapter: selectedChapter,
+            score: rawScore,
+            total: total
+          }).toString();
 
-          await fetch(SUBMIT_SCORE_URL, {
-            method: 'POST',
-            body: urlParams,
-            mode: 'no-cors',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            }
+          // Append query parameters to your Web App URL and send a GET request
+          await fetch(`${SUBMIT_SCORE_URL}?${queryParams}`, {
+            method: 'GET',
+            mode: 'no-cors'
           });
           
           setScoreSubmitted(true);
