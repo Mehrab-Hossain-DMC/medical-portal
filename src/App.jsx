@@ -384,17 +384,21 @@ export default function App() {
       const submitData = async () => {
         setIsSubmittingScore(true);
         try {
-          const formData = new FormData();
-          formData.append('name', userName);
-          formData.append('subject', selectedSubject);
-          formData.append('chapter', selectedChapter);
-          formData.append('score', rawScore);
-          formData.append('total', total);
+          // Changed from FormData to URLSearchParams
+          const urlParams = new URLSearchParams();
+          urlParams.append('name', userName);
+          urlParams.append('subject', selectedSubject);
+          urlParams.append('chapter', selectedChapter);
+          urlParams.append('score', rawScore);
+          urlParams.append('total', total);
 
           await fetch(SUBMIT_SCORE_URL, {
             method: 'POST',
-            body: formData,
-            mode: 'no-cors' // Important to bypass CORS blocks with Google Web Apps
+            body: urlParams,
+            mode: 'no-cors',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
           });
           
           setScoreSubmitted(true);
